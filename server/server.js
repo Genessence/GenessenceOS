@@ -113,12 +113,19 @@ const PORT = process.env.PORT || 5050;
 
 connectDB().then(async () => {
   try {
-    const userCount = await User.countDocuments();
-    if (userCount === 0) {
-      console.log('No users found in database. Running auto-seeding logic...');
-      await seedData();
+    const isProduction = process.env.NODE_ENV === 'production';
+    const shouldSeed = !isProduction || process.env.SEED_DATABASE === 'true';
+
+    if (shouldSeed) {
+      const userCount = await User.countDocuments();
+      if (userCount === 0) {
+        console.log('No users found in database. Running auto-seeding logic...');
+        await seedData();
+      } else {
+        console.log(`Database already has ${userCount} users. Auto-seeding skipped.`);
+      }
     } else {
-      console.log(`Database already has ${userCount} users. Auto-seeding skipped.`);
+      console.log('Database auto-seeding skipped (disabled in production unless SEED_DATABASE=true).');
     }
   } catch (err) {
     console.error('Error verifying database seed state:', err.message);

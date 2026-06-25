@@ -21,43 +21,46 @@ A modern, production-ready, full-stack single-page application for managing proj
 ## Project Structure
 
 ```text
-├── README.md               # Setup and deployment manual
-├── package.json            # Root frontend client configuration
-├── vite.config.js          # Vite and Tailwind CSS plugins config
-├── index.html              # HTML shell with theme-initializer scripts
-├── src/
-│   ├── main.jsx            # React root renderer
-│   ├── App.jsx             # React routing and context hooks entry
-│   ├── index.css           # Tailwind v4 import, fonts, and scrollbars
-│   ├── context/
-│   │   ├── AuthContext.jsx # JWT session, profile, and roles handler
-│   │   └── ToastContext.jsx# UI notifications overlay manager
-│   ├── components/
-│   │   ├── Navbar.jsx      # Top header with user profile, theme toggler
-│   │   ├── Sidebar.jsx     # Navigation panel and mobile responsive drawer
-│   │   └── Loader.jsx      # Inline spinners and full-screen loading blockers
-│   └── pages/
-│       ├── Login.jsx       # centered login card with credentials guide
-│       ├── Dashboard.jsx   # Metrics, charts, and recent activity logs
-│       ├── ProjectManagement.jsx # Excel spreadsheet table with import/export
-│       ├── DocumentUploads.jsx   # File dropzone, project link, and previews
-│       └── UserManagement.jsx   # Admin panel for roles configuration
-└── server/
-    ├── package.json        # Backend dependencies
-    ├── server.js           # Express server bootstrap and routers connector
-    ├── seed.js             # DB seeding schema with mock projects and users
-    ├── config/
-    │   └── db.js           # Mongoose setup with memory database fallback
-    ├── middleware/
-    │   └── auth.js         # JWT authorization checks and role filters
-    ├── models/
-    │   ├── User.js         # Hashed credentials database model
-    │   ├── Project.js      # Projects metadata and timelines model
-    │   └── Document.js     # Upload file mapping reference model
-    └── routes/
-        ├── auth.js         # Login, profile, and user administration endpoints
-        ├── projects.js     # Projects CRUD and bulk Excel import endpoints
-        └── documents.js    # Multer uploads handler, inline download, delete routes
+├── README.md                     # Setup and deployment manual
+├── frontend/
+│   ├── package.json              # Frontend dependencies and scripts
+│   ├── vite.config.js            # Vite and Tailwind CSS plugins config
+│   ├── index.html                # HTML shell with theme-initializer scripts
+│   ├── src/
+│   │   ├── main.jsx              # React root renderer
+│   │   ├── App.jsx               # React routing and context hooks entry
+│   │   ├── index.css             # Tailwind v4 import, fonts, and scrollbars
+│   │   ├── context/
+│   │   │   ├── AuthContext.jsx   # JWT session, profile, and roles handler
+│   │   │   └── ToastContext.jsx  # UI notifications overlay manager
+│   │   ├── components/
+│   │   │   ├── Navbar.jsx        # Top header with user profile, theme toggler
+│   │   │   ├── Sidebar.jsx       # Navigation panel and mobile responsive drawer
+│   │   │   └── Loader.jsx        # Inline spinners and full-screen loading blockers
+│   │   └── pages/
+│   │       ├── Login.jsx         # Centered login card with credentials guide
+│   │       ├── Dashboard.jsx     # Metrics, charts, and recent activity logs
+│   │       ├── ProjectManagement.jsx # Excel spreadsheet table with import/export
+│   │       ├── DocumentUploads.jsx   # File dropzone, project link, and previews
+│   │       └── UserManagement.jsx    # Admin panel for roles configuration
+│   └── public/
+└── backend/
+    └── server/
+        ├── package.json          # Backend dependencies
+        ├── server.js             # Express server bootstrap and routers connector
+        ├── seed.js               # DB seeding schema with mock projects and users
+        ├── config/
+        │   └── db.js             # Mongoose setup with memory database fallback
+        ├── middleware/
+        │   └── auth.js           # JWT authorization checks and role filters
+        ├── models/
+        │   ├── User.js           # Hashed credentials database model
+        │   ├── Project.js        # Projects metadata and timelines model
+        │   └── Document.js       # Upload file mapping reference model
+        └── routes/
+            ├── auth.js           # Login, profile, and user administration endpoints
+            ├── projects.js       # Projects CRUD and bulk Excel import endpoints
+            └── documents.js      # Multer uploads handler, inline download, delete routes
 ```
 
 ---
@@ -72,13 +75,14 @@ A modern, production-ready, full-stack single-page application for managing proj
 ### Setup Instructions
 
 1. **Clone the repository** (or navigate to the workspace directory).
-2. **Install frontend dependencies** (in the root directory):
+2. **Install frontend dependencies** (in the `frontend` directory):
    ```bash
+   cd frontend
    npm install
    ```
-3. **Install backend dependencies** (in the `server` directory):
+3. **Install backend dependencies** (in the `backend/server` directory):
    ```bash
-   cd server
+   cd ../backend/server
    npm install
    ```
 
@@ -87,15 +91,17 @@ A modern, production-ready, full-stack single-page application for managing proj
 To run the application locally, you must run both the backend API server and the frontend Vite development server:
 
 #### 1. Start the Backend API Server:
-In the `server` directory:
+In the `backend/server` directory:
 ```bash
+cd backend/server
 npm run dev
 ```
 *Note: The server runs on `http://localhost:5000`. On first launch, if the database is empty, it will automatically populate default credentials and mock data.*
 
 #### 2. Start the Frontend client:
-In the root directory (in a separate terminal window):
+In the `frontend` directory (in a separate terminal window):
 ```bash
+cd frontend
 npm run dev
 ```
 *Note: The React client will launch on `http://localhost:5173`.*
@@ -124,7 +130,7 @@ Use the following seeded accounts to verify different role behaviors:
 
 ### Backend Deployment (Render / Railway / Heroku)
 
-Deploy the `server` folder to your backend hosting platform:
+Deploy the `backend/server` folder to your backend hosting platform:
 - **Build Command**: `npm install`
 - **Start Command**: `npm start`
 - **Environment Variables**:
@@ -135,8 +141,8 @@ Deploy the `server` folder to your backend hosting platform:
 
 ### Frontend Deployment (Vercel / Netlify / Cloudflare)
 
-Deploy the root project directory to your hosting platform:
+Deploy the `frontend` directory to your hosting platform:
 - **Framework Preset**: `Vite`
 - **Build Command**: `npm run build`
 - **Output Directory**: `dist`
-- *Note: Ensure API fetch links in `src/context/AuthContext.jsx` are configured to point to your live backend domain in production instead of localhost.*
+- *Note: Ensure API fetch links in `frontend/src/context/AuthContext.jsx` are configured to point to your live backend domain in production instead of localhost.*

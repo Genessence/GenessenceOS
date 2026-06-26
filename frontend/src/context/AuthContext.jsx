@@ -1,13 +1,9 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { API_URL } from '../config';
 
 const AuthContext = createContext(null);
 
 export const useAuth = () => useContext(AuthContext);
-
-const API_URL = import.meta.env.VITE_API_URL
-  || (window.location.origin.includes('localhost') && window.location.port !== '5050'
-    ? 'http://localhost:5050/api'
-    : 'https://genessence-2.onrender.com/api');
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

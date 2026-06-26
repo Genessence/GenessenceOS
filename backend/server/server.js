@@ -8,70 +8,62 @@ const seedData = require('./seed');
 
 const app = express();
 
-// ── CORS: allow all localhost origins & configured production frontends ───────
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5175',
-  'http://localhost:5176',
-  'http://localhost:5177',
-  'http://localhost:5178',
-  'http://localhost:5179',
-  'http://localhost:5180',
-  'http://127.0.0.1:5173',
-  'http://127.0.0.1:5176'
-];
+// ── CORS ──────────────────────────────────────────────────────────────────
+// Allowed production origins come from FRONTEND_URL (comma-separated for
+// multiple, e.g. "https://genessenceos-1.onrender.com"). In development we also
+// allow any localhost / 127.0.0.1 port. We never use origin:"*" — credentials
+// are enabled, so each allowed origin is reflected explicitly.
+const isProduction = process.env.NODE_ENV === 'production';
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like curl, mobile apps, Postman)
+const allowedOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((o) => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
+if (isProduction && allowedOrigins.length === 0) {
+  console.warn('WARNING: FRONTEND_URL is not set — browser cross-origin requests will be blocked in production.');
+}
+
+const corsOptions = {
+  origin(origin, callback) {
+    // No Origin header (curl, health checks, server-to-server) → allow.
     if (!origin) return callback(null, true);
-    
-    // Allow localhost/127.0.0.1 development environments
-    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
-      return callback(null, true);
-    }
-    
-    // Allow explicitly defined frontend URL in production
-    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
-      return callback(null, true);
-    }
-    
-    // Allow any vercel.app subdomain for easy preview/deployments
-    if (origin.endsWith('.vercel.app')) {
+
+    const normalized = origin.replace(/\/+$/, '');
+
+    // Development convenience: any localhost / 127.0.0.1 port.
+    if (!isProduction && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized)) {
       return callback(null, true);
     }
 
-    if (allowedOrigins.includes(origin)) {
+    // Explicitly configured frontend origin(s) — the only ones allowed in prod.
+    if (allowedOrigins.includes(normalized)) {
       return callback(null, true);
     }
-    
-    callback(new Error(`CORS policy: Origin ${origin} not allowed`));
+
+    return callback(new Error(`CORS: origin ${origin} is not allowed`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
-}));
+};
 
-// Handle pre-flight OPTIONS for all routes
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ── Request Logger (dev mode) ─────────────────────────────────────────────────
-if (process.env.NODE_ENV !== 'production') {
-  app.use((req, res, next) => {
-    const start = Date.now();
-    res.on('finish', () => {
-      const duration = Date.now() - start;
-      const statusEmoji = res.statusCode >= 500 ? '🔴' : res.statusCode >= 400 ? '🟡' : '🟢';
-      console.log(`${statusEmoji} ${req.method} ${req.originalUrl} → ${res.statusCode} (${duration}ms)`);
-    });
-    next();
+// ── Request logger (all environments) ───────────────────────────────────────
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const statusEmoji = res.statusCode >= 500 ? '🔴' : res.statusCode >= 400 ? '🟡' : '🟢';
+    console.log(`${statusEmoji} ${req.method} ${req.originalUrl} → ${res.statusCode} (${duration}ms)`);
   });
-}
+  next();
+});
 
 // Serve static uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -91,13 +83,11 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Serve frontend in production (if integrated)
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
-  });
-}
+// API-only service: the frontend is deployed as a separate Render service, so we
+// do NOT serve a frontend build here. Unmatched routes return a JSON 404.
+app.use((req, res) => {
+  res.status(404).json({ message: `Not found: ${req.method} ${req.originalUrl}` });
+});
 
 // Global Error Handler
 app.use((err, req, res, next) => {
@@ -119,7 +109,6 @@ const startServer = async () => {
   }
 
   try {
-    const isProduction = process.env.NODE_ENV === 'production';
     const shouldSeed = !isProduction || process.env.SEED_DATABASE === 'true';
 
     if (shouldSeed) {
@@ -138,8 +127,8 @@ const startServer = async () => {
   }
 
   app.listen(PORT, () => {
-    console.log(`\n🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📋 Health: http://localhost:${PORT}/health`);
+    console.log(`\n🚀 Server running on port ${PORT}`);
+    console.log(`📋 Health check available at /health`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}\n`);
   });
 };

@@ -1,0 +1,38 @@
+# Render Blueprint for the Genessence backend (Express + Prisma/PostgreSQL).
+# Use via Render → "New +" → "Blueprint" pointed at this repo, OR mirror these
+# values into an existing Web Service's settings.
+#
+# Key point: the backend app + its package.json + prisma/ live in `backend/server`,
+# so the service Root Directory must be `backend/server` (NOT `backend`).
+# There is no `build` script — `npm install` runs `postinstall: prisma generate`,
+# and `npm start` runs `prisma migrate deploy && node server.js`.
+
+services:
+  - type: web
+    name: genessence-api
+    runtime: node
+    plan: free
+    rootDir: backend/server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: genessence-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true        # Render generates a strong secret (do NOT reuse the old weak one)
+      - key: NODE_ENV
+        value: production
+      - key: SEED_DATABASE
+        value: "true"              # first deploy only: seeds admin/manager/viewer if the DB is empty.
+                                   # set to "false" after the first successful deploy.
+      # PORT is injected by Render automatically; the app reads process.env.PORT.
+
+databases:
+  - name: genessence-db
+    plan: free
+    databaseName: genessence
+    # Render provisions PostgreSQL and wires its connection string into DATABASE_URL above.
